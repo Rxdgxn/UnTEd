@@ -1,0 +1,1 @@
+**UnTEd** (Unconventional Text Editor) is a simple console based editor, mainly built for fun. It is planned to have syntax highlighting for several languages in the near future. Also, it is kind of an experiment to test out F#.
