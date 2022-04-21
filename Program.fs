@@ -4,10 +4,10 @@ open System.IO
 let mutable x = 0
 let mutable y = 0
 let mutable ended = false
-let mutable text = [|"Hello there"; "General Kenobi"|]
+let mutable text = [|"if "; "General Kenobi"|]
 let mutable move = false
 
-let display(content: string[]) =
+let display() =
     Console.Clear()
     if move then
         Console.ForegroundColor <- ConsoleColor.Green
@@ -17,8 +17,6 @@ let display(content: string[]) =
         Console.ForegroundColor <- ConsoleColor.Red
         printfn "MODE: EDITOR\n"
         Console.ForegroundColor <- ConsoleColor.White
-    for l in content do
-        printfn "%s" l
 
 let shiftArray(selected_text: string) =
     text <- Array.append text [|""|]
@@ -28,6 +26,20 @@ let shiftArray(selected_text: string) =
 
     if text.[y+1] = "" then y <- y + 1
 
+let printC() =
+    let KEYWORDS = [|"int"; "float"; "double"; "void"; "if"; "else"; "for"; "while"|]
+    for line in text do
+        let mutable cw = ""
+        for i in 0 .. line.Length - 1 do
+            if not(line.[i] = ' ') && not(i = line.Length - 1) then
+                cw <- cw + string line.[i]
+            else
+                if (i = line.Length - 1) then cw <- cw + string line.[i]
+                if Array.contains (cw.Trim()) KEYWORDS then Console.ForegroundColor <- ConsoleColor.Blue
+                printf "%s " cw
+                Console.ForegroundColor <- ConsoleColor.White
+                cw <- ""
+        printfn ""
 
 [<EntryPoint>]
 let main argv =
@@ -38,8 +50,10 @@ let main argv =
     while not(ended) do
         let mutable selected_text = text.[y]
         if x >= selected_text.Length then x <- selected_text.Length
-        display text
+        display()
+        printC()
         Console.SetCursorPosition(x, y + 2)
+
         let k = Console.ReadKey().KeyChar
         match int(k) with
         | 119 -> (
@@ -86,5 +100,5 @@ let main argv =
                 )
         | 18 -> Console.Clear(); exit(1)
         | c   -> if not move then text.[y] <- selected_text.[0 .. x - 1] + string(char(c)) + selected_text.[x .. selected_text.Length - 1]; x <- x + 1
-
+            
     0
