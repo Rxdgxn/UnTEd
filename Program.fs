@@ -4,19 +4,31 @@ open System.IO
 let mutable x = 0
 let mutable y = 0
 let mutable ended = false
-let mutable text = [|"if "; "General Kenobi"|]
+let mutable text = [||]
 let mutable move = false
+let mutable saved = true
 
 let display() =
     Console.Clear()
     if move then
         Console.ForegroundColor <- ConsoleColor.Green
-        printfn "MODE: CONTROL\n"
+        printf "MODE: CONTROL   "
         Console.ForegroundColor <- ConsoleColor.White
+        if saved then printfn "(saved)\n" else printfn "(not saved)\n"
     else
         Console.ForegroundColor <- ConsoleColor.Red
-        printfn "MODE: EDITOR\n"
+        printf "MODE: EDITOR   "
         Console.ForegroundColor <- ConsoleColor.White
+        if saved then printfn "(saved)\n" else printfn "(not saved)\n"
+
+let isNumber(s: string) = 
+    s |> Seq.forall Char.IsDigit
+
+let readLines (filePath:string) = seq {
+    use sr = new StreamReader (filePath)
+    while not sr.EndOfStream do
+        yield sr.ReadLine ()
+}
 
 let shiftArray(selected_text: string) =
     text <- Array.append text [|""|]
@@ -35,8 +47,11 @@ let printC() =
                 cw <- cw + string line.[i]
             else
                 if (i = line.Length - 1) then cw <- cw + string line.[i]
-                if Array.contains (cw.Trim()) KEYWORDS then Console.ForegroundColor <- ConsoleColor.Blue
-                printf "%s " cw
+
+                if Array.contains (cw.Trim()) KEYWORDS then Console.ForegroundColor <- ConsoleColor.Yellow
+                elif isNumber (cw.Trim()) then Console.ForegroundColor <- ConsoleColor.DarkCyan
+                //elif cw.[0] = '\"' && cw.[cw.Length - 1] = '\"' then Console.ForegroundColor <- ConsoleColor.Green;
+                printf "%s " cw 
                 Console.ForegroundColor <- ConsoleColor.White
                 cw <- ""
         printfn ""
@@ -44,6 +59,10 @@ let printC() =
 [<EntryPoint>]
 let main argv =
     
+    let lines = readLines argv.[0]
+    for l in lines do
+        text <- Array.append text [|l|];
+
     Console.ForegroundColor <- ConsoleColor.White
     Console.Clear()
 
@@ -55,6 +74,7 @@ let main argv =
         Console.SetCursorPosition(x, y + 2)
 
         let k = Console.ReadKey().KeyChar
+        saved <- false
         match int(k) with
         | 119 -> (
                     if move then 
@@ -84,19 +104,23 @@ let main argv =
                     else 
                         text.[y] <- selected_text.[0 .. x - 1] + "a" + selected_text.[x .. selected_text.Length - 1]; x <- x + 1 
                 )
-        | 8   -> if not move then text.[y] <- selected_text.[0 .. x - 2] + selected_text.[x .. selected_text.Length - 1]; x <- x - 1  // Backspace
+        | 8   -> if not move then // Backspace
+                    if x > 0 then text.[y] <- selected_text.[0 .. x - 2] + selected_text.[x .. selected_text.Length - 1]; x <- x - 1
+                    else (
+                        if y > 0 then
+                            x <- text.[y-1].Length
+                            text.[y-1] <- text.[y-1] + selected_text
+                            text <- text |> Array.filter ((<>) text.[y])
+                            y <- y - 1
+                    )
         | 26  -> move <- not move  // Ctrl + Z
         | 13  -> if not(move) then shiftArray selected_text  // Enter
         | 19  -> (
-                    Console.Clear()
-                    printfn "Enter your filename: "
-                    let f = Console.ReadLine()
                     let mutable content = ""
-                    
                     for l in text do
                         content <- content + l + "\n"
-                    
-                    File.WriteAllText(Directory.GetCurrentDirectory() + "\\" + f, content)
+                    File.WriteAllText(Directory.GetCurrentDirectory() + "\\" + argv.[0], content)
+                    saved <- true
                 )
         | 18 -> Console.Clear(); exit(1)
         | c   -> if not move then text.[y] <- selected_text.[0 .. x - 1] + string(char(c)) + selected_text.[x .. selected_text.Length - 1]; x <- x + 1
