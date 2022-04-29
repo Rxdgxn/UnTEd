@@ -38,8 +38,7 @@ let shiftArray(selected_text: string) =
 
     if text.[y+1] = "" then y <- y + 1
 
-let printC() =
-    let KEYWORDS = [|"int"; "float"; "double"; "void"; "if"; "else"; "for"; "while"|]
+let print(keywords: string[]) =
     for line in text do
         let mutable cw = ""
         for i in 0 .. line.Length - 1 do
@@ -48,9 +47,8 @@ let printC() =
             else
                 if (i = line.Length - 1) then cw <- cw + string line.[i]
 
-                if Array.contains (cw.Trim()) KEYWORDS then Console.ForegroundColor <- ConsoleColor.Yellow
+                if Array.contains (cw.Trim()) keywords then Console.ForegroundColor <- ConsoleColor.Yellow
                 elif isNumber (cw.Trim()) then Console.ForegroundColor <- ConsoleColor.DarkCyan
-                //elif cw.[0] = '\"' && cw.[cw.Length - 1] = '\"' then Console.ForegroundColor <- ConsoleColor.Green;
                 printf "%s " cw 
                 Console.ForegroundColor <- ConsoleColor.White
                 cw <- ""
@@ -59,6 +57,14 @@ let printC() =
 [<EntryPoint>]
 let main argv =
     
+    let mutable keywords = [||]
+    let extension = argv.[0].Split '.'
+    match extension.[extension.Length - 1] with
+        | x when (x = "c" || x = "cs" || x = "cpp" || x = "h" || x = "hpp") -> keywords <- [|"void"; "int"; "float"; "double"; "if"; "else"; "while"; "for"; "#include"; "#define"; "struct"; "class"; "static"; "private"; "public"|]
+        | "py" -> keywords <- [|"if"; "else"; "while"; "True"; "False"; "int"; "str"|]
+        | "rs" -> keywords <- [|"let"; "mut"; "i8"; "u8"; "i16"; "u16"; "i32"; "u32"; "i64"; "u64"; "i128"; "u128"; "usize"; "if"; "else"; "while"; "loop"|]
+        | _ -> keywords <- [||]
+
     let lines = readLines argv.[0]
     for l in lines do
         text <- Array.append text [|l|];
@@ -70,7 +76,7 @@ let main argv =
         let mutable selected_text = text.[y]
         if x >= selected_text.Length then x <- selected_text.Length
         display()
-        printC()
+        print keywords
         Console.SetCursorPosition(x, y + 2)
 
         let k = Console.ReadKey().KeyChar
