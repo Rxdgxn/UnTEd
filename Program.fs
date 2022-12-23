@@ -7,6 +7,9 @@ let mutable ended = false
 let mutable text = [||]
 let mutable move = false
 let mutable saved = true
+let wh = Console.WindowHeight - 6;
+let mutable wp = 0  // win pos
+let mutable csp = 0 // cursor pos
 
 let display() =
     Console.Clear()
@@ -24,10 +27,10 @@ let display() =
 let isNumber(s: string) = 
     s |> Seq.forall Char.IsDigit
 
-let readLines (filePath:string) = seq {
+let readLines (filePath: string) = seq {
     use sr = new StreamReader (filePath)
     while not sr.EndOfStream do
-        yield sr.ReadLine ()
+        yield sr.ReadLine()
 }
 
 let shiftArray(selected_text: string) =
@@ -39,7 +42,9 @@ let shiftArray(selected_text: string) =
     if text.[y+1] = "" then y <- y + 1
 
 let print(keywords: string[]) =
-    for line in text do
+    display()
+    for i in wp .. Math.Min(wp + wh, text.Length - 1) do
+        let line = text.[i]
         let mutable cw = ""
         for i in 0 .. line.Length - 1 do
             if not(line.[i] = ' ') && not(i = line.Length - 1) then
@@ -62,20 +67,21 @@ let main argv =
     match extension.[extension.Length - 1] with
         | x when (x = "c" || x = "cs" || x = "cpp" || x = "h" || x = "hpp") -> keywords <- [|"void"; "int"; "float"; "double"; "if"; "else"; "while"; "for"; "#include"; "#define"; "struct"; "class"; "static"; "private"; "public"|]
         | "py" -> keywords <- [|"if"; "else"; "while"; "True"; "False"; "int"; "str"|]
-        | "rs" -> keywords <- [|"let"; "mut"; "i8"; "u8"; "i16"; "u16"; "i32"; "u32"; "i64"; "u64"; "i128"; "u128"; "usize"; "if"; "else"; "while"; "loop"|]
+        | "rs" -> keywords <- [|"let"; "mut"; "i8"; "u8"; "i16"; "u16"; "i32"; "u32"; "i64"; "u64"; "i128"; "u128"; "usize"; "if"; "else"; "while"; "loop"; "struct"; "impl"; "fn"; "vec!"|]
         | _ -> keywords <- [||]
 
     let lines = readLines argv.[0]
     for l in lines do
         text <- Array.append text [|l|];
 
+    Console.WriteLine(text.Length)
+
     Console.ForegroundColor <- ConsoleColor.White
     Console.Clear()
-
+    Console.WriteLine(wh)
     while not(ended) do
         let mutable selected_text = text.[y]
         if x >= selected_text.Length then x <- selected_text.Length
-        display()
         print keywords
         Console.SetCursorPosition(x, y + 2)
 
@@ -84,22 +90,28 @@ let main argv =
         match int(k) with
         | 119 -> (
                     if move then 
-                        if y > 0 then 
-                            y <- y - 1
+                        if y > 0 then y <- y - 1
+                        if csp > 0 then csp <- csp - 1
+                        else
+                            if wp > 0 then
+                                wp <- wp - 1
                     else
                         text.[y] <- selected_text.[0 .. x - 1] + "w" + selected_text.[x .. selected_text.Length - 1]; x <- x + 1
                 )
         | 115 -> (
                     if move then
-                        if y < text.Length - 1 then
-                            y <- y + 1 
+                        if y < wh then y <- y + 1
+                        if csp < wh then csp <- csp + 1
+                        else
+                            if wp < text.Length then
+                                wp <- wp + 1
                     else 
                         text.[y] <- selected_text.[0 .. x - 1] + "s" + selected_text.[x .. selected_text.Length - 1]; x <- x + 1 
                 )
         | 100 -> (
                     if move then 
                         if x < selected_text.Length then
-                            x <- x + 1 
+                            x <- x + 1
                     else 
                         text.[y] <- selected_text.[0 .. x - 1] + "d" + selected_text.[x .. selected_text.Length - 1]; x <- x + 1
                 )
@@ -130,5 +142,5 @@ let main argv =
                 )
         | 18 -> Console.Clear(); exit(1)
         | c   -> if not move then text.[y] <- selected_text.[0 .. x - 1] + string(char(c)) + selected_text.[x .. selected_text.Length - 1]; x <- x + 1
-            
+        Console.Clear()
     0
