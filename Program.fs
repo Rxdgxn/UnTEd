@@ -15,7 +15,7 @@ let display() =
     Console.Clear()
     if move then
         Console.ForegroundColor <- ConsoleColor.Green
-        printf "MODE: CONTROL   "
+        printf "MODE: CONTROL  "
         Console.ForegroundColor <- ConsoleColor.White
         if saved then printfn "(saved)\n" else printfn "(not saved)\n"
     else
@@ -89,7 +89,7 @@ let main argv =
         saved <- false
         match int(k) with
         | 119 -> (
-                    if move then 
+                    if move then
                         if y > 0 then y <- y - 1
                         if csp > 0 then csp <- csp - 1
                         else
@@ -100,10 +100,10 @@ let main argv =
                 )
         | 115 -> (
                     if move then
-                        if y < wh then y <- y + 1
+                        if y < Math.Min(wh, text.Length - 1) then y <- y + 1
                         if csp < wh then csp <- csp + 1
                         else
-                            if wp < text.Length then
+                            if wp < text.Length - wh && text.Length > wh then
                                 wp <- wp + 1
                     else 
                         text.[y] <- selected_text.[0 .. x - 1] + "s" + selected_text.[x .. selected_text.Length - 1]; x <- x + 1 
@@ -118,7 +118,7 @@ let main argv =
         | 97  -> (
                     if move then
                         if x > 0 then
-                            x <- x - 1 
+                            x <- x - 1
                     else 
                         text.[y] <- selected_text.[0 .. x - 1] + "a" + selected_text.[x .. selected_text.Length - 1]; x <- x + 1 
                 )
