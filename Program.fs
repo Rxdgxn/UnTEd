@@ -7,9 +7,11 @@ let mutable ended = false
 let mutable text = [||]
 let mutable move = false
 let mutable saved = true
-let wh = Console.WindowHeight - 6;
-let mutable wp = 0  // win pos
-let mutable csp = 0 // cursor pos
+let wh = Console.WindowHeight - 6
+let mutable wp = 0
+let mutable csp = 0
+
+// TODO: Text isn't properly inserted when changing the "buffer"
 
 let display() =
     Console.Clear()
