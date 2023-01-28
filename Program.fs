@@ -11,8 +11,6 @@ let wh = Console.WindowHeight - 6
 let mutable wp = 0
 let mutable csp = 0
 
-// TODO: Text isn't properly inserted when changing the "buffer"
-
 let display() =
     Console.Clear()
     if move then
@@ -28,12 +26,6 @@ let display() =
 
 let isNumber(s: string) = 
     s |> Seq.forall Char.IsDigit
-
-let readLines (filePath: string) = seq {
-    use sr = new StreamReader (filePath)
-    while not sr.EndOfStream do
-        yield sr.ReadLine()
-}
 
 let shiftArray(selected_text: string) =
     text <- Array.append text [|""|]
@@ -63,18 +55,19 @@ let print(keywords: string[]) =
 
 [<EntryPoint>]
 let main argv =
-    
+
     let mutable keywords = [||]
     let extension = argv.[0].Split '.'
     match extension.[extension.Length - 1] with
         | x when (x = "c" || x = "cs" || x = "cpp" || x = "h" || x = "hpp") -> keywords <- [|"void"; "int"; "float"; "double"; "if"; "else"; "while"; "for"; "#include"; "#define"; "struct"; "class"; "static"; "private"; "public"|]
+        | x when (x = "fs" || x = "fsx" || x = "fsi") -> keywords <- [|"void"; "int"; "float"; "double"; "if"; "else"; "while"; "for"; "in"; "let"; "do"; "mutable"; "then"; "match"; "with"; "rec"; "type"; "open"|]
         | "py" -> keywords <- [|"if"; "else"; "while"; "True"; "False"; "int"; "str"|]
         | "rs" -> keywords <- [|"let"; "mut"; "i8"; "u8"; "i16"; "u16"; "i32"; "u32"; "i64"; "u64"; "i128"; "u128"; "usize"; "if"; "else"; "while"; "loop"; "struct"; "impl"; "fn"; "vec!"|]
         | _ -> keywords <- [||]
 
-    let lines = readLines argv.[0]
+    let lines = File.ReadAllLines argv.[0]
     for l in lines do
-        text <- Array.append text [|l|];
+        text <- Array.append text [|l|]
 
     Console.WriteLine(text.Length)
 
@@ -85,7 +78,7 @@ let main argv =
         let mutable selected_text = text.[y]
         if x >= selected_text.Length then x <- selected_text.Length
         print keywords
-        Console.SetCursorPosition(x, y + 2)
+        Console.SetCursorPosition(x, csp + 2)
 
         let k = Console.ReadKey().KeyChar
         saved <- false
@@ -102,8 +95,8 @@ let main argv =
                 )
         | 115 -> (
                     if move then
-                        if y < Math.Min(wh, text.Length - 1) then y <- y + 1
-                        if csp < wh then csp <- csp + 1
+                        if y < text.Length - 1 then y <- y + 1
+                        if csp < Math.Min(wh - 1, text.Length - 1) then csp <- csp + 1
                         else
                             if wp < text.Length - wh && text.Length > wh then
                                 wp <- wp + 1
@@ -143,6 +136,6 @@ let main argv =
                     saved <- true
                 )
         | 18 -> Console.Clear(); exit(1)
-        | c   -> if not move then text.[y] <- selected_text.[0 .. x - 1] + string(char(c)) + selected_text.[x .. selected_text.Length - 1]; x <- x + 1
+        | c  -> if not move then text.[y] <- selected_text.[0 .. x - 1] + string(char(c)) + selected_text.[x .. selected_text.Length - 1]; x <- x + 1
         Console.Clear()
     0
